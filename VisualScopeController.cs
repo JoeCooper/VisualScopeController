@@ -18,32 +18,20 @@ public class VisualScopeController : MonoBehaviour {
 		camera = camera ?? gameObject.GetComponent<Camera>();
 		transform = transform ?? gameObject.GetComponent<Transform>();
 
-		var idealAngle = (minimumAngle + maximumAngle) / 2f;
+		float idealAngle;
 
 		var filters = gameObject.GetComponents<AbstractVisualScopeFilter>();
 
-		var allTargets = new List<Transform>();
+		var allTargets = new HashSet<Transform>();
 
 		foreach(var filter in filters)
 		{
-			allTargets.AddRange(filter.Targets);
+			allTargets.UnionWith(filter.Targets);
 		}
 
 		if(allTargets.Count > 0)
 		{
-			var positions = new Vector3[allTargets.Count];
-
-			for(int i = 0; i < allTargets.Count; i++)
-			{
-				positions[i] = allTargets[i].position;
-			}
-			
 			var matrix = transform.worldToLocalMatrix;
-			
-			for(int i = 0; i < positions.Length; i++)
-			{
-				positions[i] = matrix.MultiplyPoint3x4(positions[i]);
-			}
 
 			var greatestAngle = float.MinValue;
 
@@ -51,8 +39,10 @@ public class VisualScopeController : MonoBehaviour {
 			var horizontalFieldOfView = 2f * Mathf.Atan(Mathf.Tan(fieldOfView / 2f) * camera.aspect);
 			var horizontalRelation = fieldOfView / horizontalFieldOfView;
 
-			foreach(var position in positions)
+			foreach(var target in allTargets)
 			{
+				var position = matrix.MultiplyPoint3x4(target.position);
+
 				if(position.z < camera.nearClipPlane)
 					continue;
 
@@ -68,6 +58,10 @@ public class VisualScopeController : MonoBehaviour {
 			}
 						
 			idealAngle = Mathf.Clamp(greatestAngle * Mathf.Rad2Deg * 2f * margin, minimumAngle, maximumAngle);
+		}
+		else
+		{
+			idealAngle = (minimumAngle + maximumAngle) / 2f;
 		}
 
 		camera.fieldOfView = Mathf.SmoothDamp(camera.fieldOfView, idealAngle, ref angleRateOfChange, smoothTime);
