@@ -41,6 +41,9 @@ public class VisualScopeController : MonoBehaviour {
 
 			foreach(var target in allTargets)
 			{
+				if(target == null)
+					continue;
+
 				var position = matrix.MultiplyPoint3x4(target.position);
 
 				if(position.z < camera.nearClipPlane)
